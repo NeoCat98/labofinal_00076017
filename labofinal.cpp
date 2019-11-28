@@ -338,39 +338,53 @@ int main()
     T = crear();
    
     int datos[15]= {50,40,30,10,35,45,43,48,70,60,55,65,80,75,100};
-    for(int i=15;i>0;i--){
+    for(int i=0;i<15;i++){
         insertar(T, datos[i]);
     }
     
+    cout<<"\n"<<"\n";
+    mostrarPreOrder(T);
+    cout<<"\n"<<"\n";
+    
     cout<<"Insertar 25"<<endl;
     insertar(T,25);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Borrar 40"<<endl;
     borrar(T,40);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Insertar 15"<<endl;
     insertar(T,15);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Insertar 90"<<endl;
     insertar(T,90);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Borrar 50"<<endl;
     borrar(T,50);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Borrar 30"<<endl;
     borrar(T,30);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Insertar 95"<<endl;
     insertar(T,95);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Borrar 15"<<endl;
     borrar(T,15);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Insertar 35"<<endl;
     insertar(T,35);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     cout<<"Borrar 10"<<endl;
     borrar(T,10);
+    mostrarPreOrder(T);
     cout<<"\n"<<"\n";
     
     destruirArbol(T);
