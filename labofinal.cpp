@@ -1,0 +1,379 @@
+#include <iostream>
+
+enum Color {BLACK, RED};
+
+typedef struct Nodo{
+    int dato;
+    Color col;
+    struct Nodo* parent;
+    struct Nodo* izq;
+    struct Nodo* der;
+} Nodo;
+
+enum Side {LEFT,RIGHT};
+
+using namespace std;
+
+Nodo* crear(){
+    return NULL;
+}
+
+bool estaVacio(Nodo* T){
+    return (T == NULL)?true:false;
+}
+
+Nodo* crearNodo(int n){
+    Nodo* nuevo;
+    nuevo = (Nodo*) malloc(sizeof(Nodo)); //Alternativa 1
+    //nuevo = new Nodo;                     //Alternativa 2
+    if(nuevo == NULL){
+        cout << "CATASTROPHIC FAILURE!!!!! :'(\n";
+        exit(EXIT_FAILURE);
+    }
+    nuevo->dato = n;
+    nuevo->col = RED;
+    nuevo->parent = NULL;
+    nuevo->izq = NULL;
+    nuevo->der = NULL;
+   
+    return nuevo;
+}
+
+
+void mostrarPreOrder(Nodo* T){
+    if(estaVacio(T)){
+        return;
+    }
+    if(T->col == BLACK){
+    	cout << T->dato<< "B; ";
+	}else{
+    	cout << T->dato<<"R; ";
+	}
+    mostrarPreOrder(T->izq);
+    mostrarPreOrder(T->der);
+}
+
+bool esta(Nodo* T, int n){
+    if(estaVacio(T)) return false;
+    if(T->dato == n) return true;
+    if(n <= T->dato) return esta(T->izq, n);
+    else return esta(T->der, n);
+}
+
+int inOrderSuccessor(Nodo* T){
+    if(T->izq == NULL) return T->dato;
+    return inOrderSuccessor(T->izq);
+}
+
+void destruirArbol(Nodo* T){
+    if(estaVacio(T)) return;
+    destruirArbol(T->izq);
+    destruirArbol(T->der);
+    free(T);
+}
+
+///////////////////////////////START//////////////////////////////
+
+void rotarLEFT(Nodo *&A, Nodo *&B){
+    cout << "Rotando LEFT: " << A->dato << " y " << B->dato << "\n";
+    Nodo* Adad = A->parent;
+    Nodo* Bizq = B->izq;
+   
+    if(Bizq != NULL) Bizq->parent = A;
+    B->izq = A;
+    A->der = Bizq;
+    A->parent = B;
+    B->parent = Adad;
+    if(Adad != NULL)
+        if(Adad->izq == A)
+            Adad->izq = B;
+        else
+            Adad->der = B;
+}
+
+void rotarRIGHT(Nodo *&A, Nodo *&B){
+    cout << "Rotando RIGHT: " << A->dato << " y " << B->dato << "\n";
+    Nodo* Adad = A->parent;
+    Nodo* Bder = B->der;
+   
+    if(Bder != NULL) Bder->parent = A;
+    B->der = A;
+    A->izq = Bder;
+    A->parent = B;
+    B->parent = Adad;
+    if(Adad != NULL)
+        if(Adad->izq == A)
+            Adad->izq = B;
+        else
+            Adad->der = B;
+}
+
+Nodo* getRoot(Nodo* n){
+    if(n->parent == NULL) return n;
+    else return getRoot(n->parent);
+}
+
+void fixRoot(Nodo *&T, Nodo *&recent){
+    Nodo* root_actual = getRoot(recent);
+    if(T != root_actual) T = root_actual;
+}
+
+void fixDoubleRed(Nodo *&T, Nodo *&recent){
+    Side s1,s2;
+    Nodo* daddy;
+    Nodo* grandpa;
+    Nodo* uncle;
+    while(true){
+        grandpa = NULL;
+        uncle = NULL;
+        daddy = recent->parent;
+        if(daddy != NULL) grandpa = daddy->parent;
+        if(daddy != NULL && grandpa != NULL && daddy->col != BLACK){
+            if(daddy == grandpa->izq){
+                s1 = LEFT;
+                uncle = grandpa->der;
+            }else{
+                s1 = RIGHT;
+                uncle = grandpa->izq;
+            }
+            if(recent == daddy->izq) s2 = LEFT;
+            else s2 = RIGHT;
+            if(uncle == NULL || uncle->col == BLACK){
+                if(s1 == LEFT && s2 == LEFT){
+                    rotarRIGHT(grandpa,daddy);
+                    daddy->col = BLACK;
+                    grandpa->col = RED;
+                }
+                if(s1 == LEFT && s2 == RIGHT){
+                    rotarLEFT(daddy,recent);
+                    rotarRIGHT(grandpa,recent);
+                    recent->col = BLACK;
+                    grandpa->col = RED;
+                }
+                if(s1 == RIGHT && s2 == LEFT){
+                    rotarRIGHT(daddy,recent);
+                    rotarLEFT(grandpa,recent);
+                    recent->col = BLACK;
+                    grandpa->col = RED;
+                }
+                if(s1 == RIGHT && s2 == RIGHT){
+                    rotarLEFT(grandpa,daddy);
+                    daddy->col = BLACK;
+                    grandpa->col = RED;
+                }
+                break;
+            }else{
+                daddy->col = BLACK;
+                uncle->col = BLACK;
+                grandpa->col = RED;
+                recent = grandpa;
+                continue;
+            }
+        }else break;
+    }
+    fixRoot(T,recent);
+    T->col = BLACK;
+}
+
+Nodo* insertarAux(Nodo *&T, int n){
+    Nodo* recent = NULL;
+   
+    if(n <= T->dato){
+        if(T->izq == NULL){
+            recent = crearNodo(n);
+            recent->parent = T;
+            T->izq = recent;
+        }else recent = insertarAux(T->izq, n);
+    }else{
+        if(T->der == NULL){
+            recent = crearNodo(n);
+            recent->parent = T;
+            T->der = recent;
+        }else recent = insertarAux(T->der, n);
+    }
+   
+    return recent;
+}
+
+void insertar(Nodo *&T, int n){
+    if(estaVacio(T)){
+        T = crearNodo(n);
+        T->col = BLACK;
+    }else{
+        Nodo* nuevo = insertarAux(T, n);
+        if(nuevo->parent->col != BLACK) fixDoubleRed(T,nuevo);
+    }
+}
+
+void fixDoubleBlack(Nodo *&T, Nodo *&H, Nodo *&P){
+    Nodo* hijo;
+    Nodo* sibling;
+    Nodo* cousin;
+    Nodo* daddy;
+    hijo = H;
+    while(true){
+        sibling = NULL;
+        cousin = NULL;
+        if(hijo != NULL) daddy = hijo->parent;
+        else daddy = P;
+        if(daddy != NULL){
+            Side lado_hijo = (daddy->izq == hijo)?LEFT:RIGHT;
+            Side lado_sibling, lado_cousin;
+            if(lado_hijo == LEFT){
+                sibling = daddy->der;
+                lado_sibling = RIGHT;
+            }else{
+                sibling = daddy->izq;
+                lado_sibling = LEFT;
+            }
+            if(sibling->col == BLACK){
+                if((sibling->izq == NULL || sibling->izq->col == BLACK) && (sibling->der == NULL || sibling->der->col == BLACK)){
+                    if(daddy->col == BLACK){
+                        sibling->col = RED;
+                        if(hijo != NULL) hijo->col = BLACK;
+                        hijo = daddy;
+                        continue;
+                    }else{
+                        sibling->col = RED;
+                        daddy->col = BLACK;
+                        if(hijo != NULL) hijo->col = BLACK;
+                        break;
+                    }
+                }else{
+                    if(sibling->izq == NULL || sibling->izq->col == BLACK){
+                        cousin = sibling->der;
+                        lado_cousin = RIGHT;
+                    }else{
+                        cousin = sibling->izq;
+                        lado_cousin = LEFT;
+                    }
+                    if(lado_sibling == RIGHT && lado_cousin == RIGHT){
+                        rotarLEFT(daddy,sibling);
+                        cousin->col = BLACK;
+                        sibling->col = daddy->col;
+                    }
+                    if(lado_sibling == RIGHT && lado_cousin == LEFT){
+                        rotarRIGHT(sibling,cousin);
+                        rotarLEFT(daddy,cousin);
+                        cousin->col = daddy->col;
+                    }
+                    if(lado_sibling == LEFT && lado_cousin == RIGHT){
+                        rotarLEFT(sibling,cousin);
+                        rotarRIGHT(daddy,cousin);
+                        cousin->col = daddy->col;
+                    }
+                    if(lado_sibling == LEFT && lado_cousin == LEFT){
+                        rotarRIGHT(daddy,sibling);
+                        cousin->col = BLACK;
+                        sibling->col = daddy->col;
+                    }
+                    daddy->col = BLACK;
+                    if(hijo != NULL) hijo->col = BLACK;
+                    break;
+                }
+            }else{
+                if(lado_sibling == RIGHT) rotarLEFT(daddy,sibling);
+                else rotarRIGHT(daddy,sibling);
+                sibling->col = BLACK;
+                daddy->col = RED;
+                continue;
+            }
+        }else{
+            if(hijo != NULL) hijo->col = BLACK;
+            break;
+        }
+    }
+    fixRoot(T,daddy);
+    T->col = BLACK;
+}
+
+Color borrarAux(Nodo *&T, int n, Nodo *&recent, Nodo *&daddy){
+    if(T->dato == n){
+        if(T->izq == NULL && T->der == NULL){
+            Color d = T->col;
+            daddy = T->parent;
+            free(T);
+            T = NULL;
+            return d;
+        }
+        if(T->izq == NULL || T->der == NULL){
+            Side lado_nulo = (T->izq == NULL)?LEFT:RIGHT;
+            Nodo* temp = T;
+            if(lado_nulo == LEFT) T = T->der;
+            else T = T->izq;
+            T->parent = temp->parent;
+            Color d = temp->col;
+            Color h = T->col;
+            free(temp);
+            if(d == BLACK && h == BLACK){
+                recent = T;
+                daddy = T->parent;
+                return BLACK;
+            }else{
+                T->col = BLACK;
+                return RED;
+            }
+        }
+        int sustituto = inOrderSuccessor(T->der);
+        T->dato = sustituto;
+        return borrarAux(T->der, sustituto, recent, daddy);
+    }
+    if(n < T->dato) return borrarAux(T->izq, n, recent, daddy);
+    else return borrarAux(T->der, n, recent, daddy);
+}
+
+void borrar(Nodo *&T, int n){
+    Nodo* hijo = NULL;
+    Nodo* daddy = NULL;
+    Color caso = borrarAux(T, n, hijo, daddy);
+    if(caso != RED) fixDoubleBlack(T, hijo, daddy);
+}
+
+//////////////////////////////END/////////////////////////////////////
+
+int main()
+{
+    Nodo* T;
+   
+    T = crear();
+   
+    int datos[15]= {50,40,30,10,35,45,43,48,70,60,55,65,80,75,100};
+    for(int i=15;i>0;i--){
+        insertar(T, datos[i]);
+    }
+    
+    cout<<"Insertar 25"<<endl;
+    insertar(T,25);
+    cout<<"\n"<<"\n";
+    cout<<"Borrar 40"<<endl;
+    borrar(T,40);
+    cout<<"\n"<<"\n";
+    cout<<"Insertar 15"<<endl;
+    insertar(T,15);
+    cout<<"\n"<<"\n";
+    cout<<"Insertar 90"<<endl;
+    insertar(T,90);
+    cout<<"\n"<<"\n";
+    cout<<"Borrar 50"<<endl;
+    borrar(T,50);
+    cout<<"\n"<<"\n";
+    cout<<"Borrar 30"<<endl;
+    borrar(T,30);
+    cout<<"\n"<<"\n";
+    cout<<"Insertar 95"<<endl;
+    insertar(T,95);
+    cout<<"\n"<<"\n";
+    cout<<"Borrar 15"<<endl;
+    borrar(T,15);
+    cout<<"\n"<<"\n";
+    cout<<"Insertar 35"<<endl;
+    insertar(T,35);
+    cout<<"\n"<<"\n";
+    cout<<"Borrar 10"<<endl;
+    borrar(T,10);
+    cout<<"\n"<<"\n";
+    
+    destruirArbol(T);
+
+    return 0;
+}
